@@ -44,6 +44,8 @@ Here are the three approaches:
     NSLog(@"you input flags is: %ld ==========>", flags);
     [sender insertText:[NSString stringWithFormat:@"__%@__", string]
       replacementRange:NSMakeRange(NSNotFound, NSNotFound)];
+    NSLog(@"sender class: %@", NSStringFromClass([sender class]));
+//    IPMDServerClientWrapper
     return YES;
 }
 
