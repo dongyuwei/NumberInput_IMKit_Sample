@@ -1,8 +1,7 @@
+#import "InputController.h"
 
-#import "NumberInputController.h"
 
-
-@implementation NumberInputController
+@implementation InputController
 
 /*
 Implement one of the three ways to receive input from the client. 
@@ -21,34 +20,31 @@ Here are the three approaches:
                         -(BOOL)handleEvent:(NSEvent*)event client:(id)sender;
 */
 
-//dyw have tested `handleEvent` and `inputText` methods as below, they works as expected.
-
-//-(BOOL)handleEvent:(NSEvent*)event client:(id)sender
-//{
-////    NSInteger keyCode = [event keyCode];
-////    unsigned char keyChar = [string UTF8String][0];
-//
-//    NSString* string = [event characters];
-//    
-//    NSLog(@"you input string is: %@ ==========>", string);//tail -f /var/log/system.log
-//    //see https://github.com/sunpinyin/sunpinyin/blob/master/wrapper/macos/SunPinyinInputController.mm
-//    [sender insertText:[NSString stringWithFormat:@"_%@_", string]
-//      replacementRange:NSMakeRange(NSNotFound, NSNotFound)];
-//    return YES;
-//}
 
 -(BOOL)inputText:(NSString*)string key:(NSInteger)keyCode modifiers:(NSUInteger)flags client:(id)sender
 {
-    NSLog(@"you input string is: %@ ==========>", string);//tail -f /var/log/system.log
-    NSLog(@"you input key is: %ld ==========>", keyCode);
-    NSLog(@"you input flags is: %ld ==========>", flags);
-    [sender insertText:[NSString stringWithFormat:@"__%@__", string]
-      replacementRange:NSMakeRange(NSNotFound, NSNotFound)];
-    NSLog(@"sender class: %@", NSStringFromClass([sender class]));
-//    IPMDServerClientWrapper
+    //tail -f /var/log/system.log
+    NSLog(@"text:%@, keycode:%ld, flags:%lu",string, (long)keyCode,(unsigned long)flags);
+    NSLog(@"bundleIdentifier: %@", [sender bundleIdentifier]);
+    
+    extern IMKCandidates*		candidates;
+    if ( candidates ) {
+        [candidates updateCandidates];
+        [candidates show:kIMKLocateCandidatesBelowHint];
+    }
+//    [sender insertText:string replacementRange:NSMakeRange(NSNotFound, NSNotFound)];
+    
+    
     return YES;
 }
 
+//- (id)initWithServer:(IMKServer*)server delegate:(id)delegate client:(id)inputClient{
+//    
+//}
 
+- (NSArray*)candidates:(id)sender{
+    NSMutableArray* list = @[@"test",@"foo",@"bar"];
+    return list;
+}
 @end
 

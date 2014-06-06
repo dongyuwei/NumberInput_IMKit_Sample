@@ -5,9 +5,9 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>NumberInput</string>
+	<string>hallelujah</string>
 	<key>CFBundleIdentifier</key>
-	<string>im.session.inputmethod.passwordInputMethod</string>
+	<string>im.session.inputmethod.hallelujahInputMethod</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -21,9 +21,9 @@
 	<key>CFBundleVersion</key>
 	<string>1.0</string>
 	<key>InputMethodConnectionName</key>
-	<string>NumberInput_1_Connection</string>
+	<string>Hallelujah_1_Connection</string>
 	<key>InputMethodServerControllerClass</key>
-	<string>NumberInputController</string>
+	<string>InputController</string>
 	<key>LSBackgroundOnly</key>
 	<string>1</string>
 	<key>NSMainNibFile</key>
@@ -35,6 +35,6 @@
 		<string>Latn</string>
 	</array>
 	<key>tsInputMethodIconFileKey</key>
-	<string>nine.tiff</string>
+	<string>him.tiff</string>
 </dict>
 </plist>
