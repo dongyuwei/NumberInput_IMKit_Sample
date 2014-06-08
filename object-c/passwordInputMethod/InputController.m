@@ -1,7 +1,25 @@
 #import "InputController.h"
+#import "NDTrie.h"
+#import <CoreServices/CoreServices.h>
+
+extern IMKCandidates *sharedCandidates;
+extern NDMutableTrie*  trie;
 
 
-@implementation InputController
+typedef NSInteger KeyCode;
+static const KeyCode
+KEY_RETURN = 36,
+KEY_DELETE = 51,
+KEY_ESC = 53,
+KEY_BACKSPACE = 117,
+KEY_MOVE_LEFT = 123,
+KEY_MOVE_RIGHT = 124,
+KEY_MOVE_DOWN = 125;
+
+
+@implementation InputController{
+    NSMutableString* _buffer;
+}
 
 /*
 Implement one of the three ways to receive input from the client. 
@@ -21,30 +39,87 @@ Here are the three approaches:
 */
 
 
--(BOOL)inputText:(NSString*)string key:(NSInteger)keyCode modifiers:(NSUInteger)flags client:(id)sender
-{
+-(BOOL)inputText:(NSString*)string key:(NSInteger)keyCode modifiers:(NSUInteger)flags client:(id)sender{
     //tail -f /var/log/system.log
-    NSLog(@"text:%@, keycode:%ld, flags:%lu",string, (long)keyCode,(unsigned long)flags);
-    NSLog(@"bundleIdentifier: %@", [sender bundleIdentifier]);
+    NSLog(@"text:%@, keycode:%ld, flags:%lu, bundleIdentifier: %@",
+          string, (long)keyCode,(unsigned long)flags, [sender bundleIdentifier]);
     
-    extern IMKCandidates*		candidates;
-    if ( candidates ) {
-        [candidates updateCandidates];
-        [candidates show:kIMKLocateCandidatesBelowHint];
+    [sender insertText:string replacementRange:NSMakeRange(NSNotFound, NSNotFound)];
+    
+    BOOL handled = NO;
+    
+    if ([self shouldIgnoreKey:keyCode modifiers:flags]){
+        [self resetBuffer];
+        return NO;
     }
-//    [sender insertText:string replacementRange:NSMakeRange(NSNotFound, NSNotFound)];
     
+    char ch = string.length > 0 ? [string characterAtIndex:0] : 0;
+    if(ch >= 'a' && ch <= 'z'){
+        [_buffer appendString: string];
+        [sharedCandidates updateCandidates];
+        [sharedCandidates show:kIMKLocateCandidatesBelowHint];
+        handled = YES;
+    }else{
+        [self resetBuffer];
+        [sharedCandidates hide];
+        handled = NO;
+    }
     
-    return YES;
+    return handled;
 }
 
-//- (id)initWithServer:(IMKServer*)server delegate:(id)delegate client:(id)inputClient{
-//    
+//- (void)commitComposition:(id)sender{
+//    [self resetBuffer];
 //}
 
-- (NSArray*)candidates:(id)sender{
-    NSMutableArray* list = @[@"test",@"foo",@"bar"];
-    return list;
+-(void)candidateSelected:(NSAttributedString*)candidateString {
+    [[self client] insertText:candidateString replacementRange:NSMakeRange(NSNotFound, NSNotFound)];
+    [sharedCandidates hide];
 }
+
+- (void)candidateSelectionChanged:(NSAttributedString *)candidateString{
+    NSLog(@"candidateSelectionChanged, %@", candidateString);
+    
+    NSMutableAttributedString *definition = (NSMutableAttributedString *)DCSCopyTextDefinition(NULL, (__bridge CFStringRef)candidateString, CFRangeMake(0, [candidateString length]));
+
+    
+    [sharedCandidates showAnnotation: definition];
+    
+}
+
+- (void)resetBuffer{
+    _buffer = [NSMutableString stringWithString:@""];
+}
+
+- (void) activateServer:(id)client{
+    NSLog(@"him activateServer");
+    [self resetBuffer];
+}
+
+-(void)deactivateServer:(id)sender {
+    [self resetBuffer];
+    
+    [sharedCandidates hide];
+}
+
+- (BOOL) shouldIgnoreKey:(NSInteger)keyCode modifiers:(NSUInteger)flags{
+    return (_buffer == nil || [_buffer length] == 0) && (keyCode == KEY_RETURN || keyCode == KEY_ESC ||
+                               keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE ||
+                               keyCode == KEY_MOVE_LEFT || keyCode == KEY_MOVE_RIGHT ||
+                               keyCode == KEY_MOVE_DOWN ||
+                               (flags & NSCommandKeyMask) || (flags & NSControlKeyMask) ||
+                               (flags & NSAlternateKeyMask) || (flags & NSNumericPadKeyMask));
+}
+
+- (NSArray*)candidates:(id)sender{
+    NSLog(@"buffer: %@",_buffer);
+    return [trie everyObjectForKeyWithPrefix:[NSString stringWithString: _buffer]];
+}
+
+- (void) dealloc{
+    [_buffer release];
+    [super dealloc];
+}
+
 @end
 

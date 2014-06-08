@@ -1,12 +1,12 @@
 #import <Cocoa/Cocoa.h>
 #import <InputMethodKit/InputMethodKit.h>
-
+#import "NDTrie.h"
 
 const NSString* kConnectionName = @"Hallelujah_1_Connection";
 
-//let this be a global so our application controller delegate can access it easily
-IMKServer*       server;
-IMKCandidates* candidates;
+IMKServer*      server;
+IMKCandidates*  sharedCandidates;
+NDMutableTrie*  trie;
 
 int main(int argc, char *argv[])
 {
@@ -14,20 +14,34 @@ int main(int argc, char *argv[])
     NSString*       identifier;
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	
-	//find the bundle identifier and then initialize the input method server
     identifier = [[NSBundle mainBundle] bundleIdentifier];
-    server = [[IMKServer alloc] initWithName:(NSString*)kConnectionName bundleIdentifier:[[NSBundle mainBundle] bundleIdentifier]];
+    server = [[IMKServer alloc] initWithName:(NSString*)kConnectionName
+                            bundleIdentifier:[[NSBundle mainBundle] bundleIdentifier]];
     
-    candidates = [[IMKCandidates alloc] initWithServer:server panelType:kIMKSingleColumnScrollingCandidatePanel];
+    sharedCandidates = [[IMKCandidates alloc] initWithServer:server
+                                                   panelType:kIMKSingleColumnScrollingCandidatePanel];
+    if (!sharedCandidates){
+        NSLog(@"Fatal error: Cannot initialize shared candidate panel with connection %@.", kConnectionName);
+        [server release];
+        [pool drain];
+        return -1;
+    }
+    
+    NSInputStream *inputStream = [[NSInputStream alloc] initWithFileAtPath:@"/tmp/dict.json"];
+    [inputStream open];
+    NSArray *wordList = [NSJSONSerialization JSONObjectWithStream:inputStream
+                                                          options:nil
+                                                            error:nil];
+    [inputStream close];
+    
+    trie =  [NDMutableTrie trieWithArray: wordList];
 	
-    //load the bundle explicitly because in this case the input method is a background only application 
-//	[NSBundle loadNibNamed:@"MainMenu" owner:[NSApplication sharedApplication]];
     
     [[NSBundle mainBundle] loadNibNamed:@"MainMenu"
                                   owner:[NSApplication sharedApplication]
                         topLevelObjects:nil];
 	
-	//finally run everything
+	
 	[[NSApplication sharedApplication] run];
 	
     [pool release];
