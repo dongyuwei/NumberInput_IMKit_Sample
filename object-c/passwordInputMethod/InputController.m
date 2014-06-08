@@ -53,7 +53,7 @@ Here are the three approaches:
         return NO;
     }
     
-    char ch = string.length > 0 ? [string characterAtIndex:0] : 0;
+    char ch = [string characterAtIndex:0];
     if(ch >= 'a' && ch <= 'z'){
         [_buffer appendString: string];
         [sharedCandidates updateCandidates];
@@ -79,12 +79,12 @@ Here are the three approaches:
 
 - (void)candidateSelectionChanged:(NSAttributedString *)candidateString{
     NSLog(@"candidateSelectionChanged, %@", candidateString);
-    
-    NSMutableAttributedString *definition = (NSMutableAttributedString *)DCSCopyTextDefinition(NULL, (__bridge CFStringRef)candidateString, CFRangeMake(0, [candidateString length]));
-
-    
-    [sharedCandidates showAnnotation: definition];
-    
+    if(candidateString != nil){
+        NSMutableAttributedString *definition = (NSMutableAttributedString *)DCSCopyTextDefinition(NULL, (__bridge CFStringRef)candidateString, CFRangeMake(0, [candidateString length]));
+        
+        
+        [sharedCandidates showAnnotation: definition];
+    }
 }
 
 - (void)resetBuffer{
@@ -103,7 +103,7 @@ Here are the three approaches:
 }
 
 - (BOOL) shouldIgnoreKey:(NSInteger)keyCode modifiers:(NSUInteger)flags{
-    return (_buffer == nil || [_buffer length] == 0) && (keyCode == KEY_RETURN || keyCode == KEY_ESC ||
+    return (keyCode == KEY_RETURN || keyCode == KEY_ESC ||
                                keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE ||
                                keyCode == KEY_MOVE_LEFT || keyCode == KEY_MOVE_RIGHT ||
                                keyCode == KEY_MOVE_DOWN ||
