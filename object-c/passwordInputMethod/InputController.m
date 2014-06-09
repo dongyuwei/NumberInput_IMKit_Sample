@@ -42,6 +42,7 @@ Here are the three approaches:
     NSLog(@"text:%@, keycode:%ld, flags:%lu, bundleIdentifier: %@",
           string, (long)keyCode,(unsigned long)flags, [sender bundleIdentifier]);
     
+    _currentClient = sender;
     
     BOOL handled = NO;
     
