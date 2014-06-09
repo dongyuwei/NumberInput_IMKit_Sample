@@ -59,8 +59,6 @@ Here are the three approaches:
         [sharedCandidates show:kIMKLocateCandidatesBelowHint];
         handled = YES;
     }else{
-        [sender insertText:string replacementRange:NSMakeRange(NSNotFound, NSNotFound)];
-
         [sharedCandidates hide];
         handled = NO;
     }
@@ -78,7 +76,7 @@ Here are the three approaches:
     
     NSLog(@"commitComposition: %@",text);
     
-    [sender insertText:text replacementRange:NSMakeRange(NSNotFound, NSNotFound)];
+    [sender insertText:[text stringByAppendingString:@" "] replacementRange:NSMakeRange(NSNotFound, NSNotFound)];
     
     [self setComposedBuffer:@""];
     [self setOriginalBuffer:@""];
