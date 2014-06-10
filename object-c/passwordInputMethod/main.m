@@ -8,9 +8,26 @@ IMKServer*      server;
 IMKCandidates*  sharedCandidates;
 NDMutableTrie*  trie;
 
+NDMutableTrie* buildTrieFromFile(){
+    NSString* path = [[NSBundle mainBundle] pathForResource:@"words"
+                                                     ofType:@"json"];
+    
+    NSInputStream *inputStream = [[NSInputStream alloc] initWithFileAtPath: path];
+    [inputStream open];
+    NSMutableArray *wordList = [NSJSONSerialization JSONObjectWithStream:inputStream
+                                                                 options:nil
+                                                                   error:nil];
+    [inputStream close];
+    
+    NDMutableTrie *trie =  [NDMutableTrie trieWithArray: wordList];
+    
+//    NSArray  *filtered = [trie everyObjectForKeyWithPrefix:@"hall"];
+//    NSLog(@"###filtered array: %@", filtered);
+    return trie;
+}
+
 int main(int argc, char *argv[])
 {
-    
     NSString*       identifier;
 	
     identifier = [[NSBundle mainBundle] bundleIdentifier];
@@ -24,16 +41,7 @@ int main(int argc, char *argv[])
         return -1;
     }
     
-    NSInputStream *inputStream = [[NSInputStream alloc] initWithFileAtPath:@"/tmp/dict.json"];
-    [inputStream open];
-    NSArray *wordList = [NSJSONSerialization JSONObjectWithStream:inputStream
-                                                          options:nil
-                                                            error:nil];
-    [inputStream close];
-    
-    trie =  [NDMutableTrie trieWithArray: wordList];
-    //NSLog(@"trie filtered:%@",[trie everyObjectForKeyWithPrefix:@"halle"]);
-	
+    trie =  buildTrieFromFile();
     
     [[NSBundle mainBundle] loadNibNamed:@"MainMenu"
                                   owner:[NSApplication sharedApplication]
