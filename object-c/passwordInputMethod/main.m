@@ -19,17 +19,13 @@ NDMutableTrie* buildTrieFromFile(){
                                                                    error:nil];
     [inputStream close];
     
-    NDMutableTrie *trie =  [NDMutableTrie trieWithArray: wordList];
-    
-//    NSArray  *filtered = [trie everyObjectForKeyWithPrefix:@"hall"];
-//    NSLog(@"###filtered array: %@", filtered);
-    return trie;
+    return [NDMutableTrie trieWithArray: wordList];
 }
 
 int main(int argc, char *argv[])
 {
     NSString*       identifier;
-	
+    
     identifier = [[NSBundle mainBundle] bundleIdentifier];
     server = [[IMKServer alloc] initWithName:(NSString*)kConnectionName
                             bundleIdentifier:[[NSBundle mainBundle] bundleIdentifier]];

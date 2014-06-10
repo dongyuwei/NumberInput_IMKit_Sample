@@ -47,6 +47,7 @@ Here are the three approaches:
     BOOL handled = NO;
     
     if ([self shouldIgnoreKey:keyCode modifiers:flags]){
+        [self reset];
         return NO;
     }
     
@@ -78,6 +79,10 @@ Here are the three approaches:
     
     [sender insertText:[text stringByAppendingString:@" "] replacementRange:NSMakeRange(NSNotFound, NSNotFound)];
     
+    [self reset];
+}
+
+-(void)reset{
     [self setComposedBuffer:@""];
     [self setOriginalBuffer:@""];
     _insertionIndex = 0;
@@ -157,6 +162,19 @@ Here are the three approaches:
     NSLog(@"candidateSelectionChanged, %@", candidateString);
     [_currentClient setMarkedText:[candidateString string] selectionRange:NSMakeRange(_insertionIndex, 0) replacementRange:NSMakeRange(NSNotFound,NSNotFound)];
     _insertionIndex = [candidateString length];
+    
+    if(candidateString != nil && candidateString.length >= 3){
+        @try {
+            NSString *definition = (__bridge_transfer NSString *)DCSCopyTextDefinition(NULL, (__bridge CFStringRef)candidateString, CFRangeMake(0, [candidateString length]));
+            
+            NSLog(@"definition of %@ is %@",candidateString, definition);
+            
+            [sharedCandidates showAnnotation: definition];
+        }
+        @catch (NSException *exception) {
+            NSLog(@"%@", exception.reason);
+        }
+    }
 }
 
 /*!
@@ -170,14 +188,38 @@ Here are the three approaches:
     [self commitComposition:_currentClient];
     
     NSLog(@"candidateSelected, %@", candidateString);
-//    if(candidateString != nil){
-//        NSMutableAttributedString *definition = (NSMutableAttributedString *)DCSCopyTextDefinition(NULL, (__bridge CFStringRef)candidateString, CFRangeMake(0, [candidateString length]));
-//        
-//        
-//        [sharedCandidates showAnnotation: definition];
-//    }
 }
 
+- (NSArray*) getGoogleSuggestion: (NSString*)word{
+    NSString* query = [NSString stringWithFormat: @"http://google.com/complete/search?output=firefox&hl=en&q=%@", word];
+    NSURL * url = [[NSURL alloc] initWithString: query];
+
+    NSURLRequest *urlRequest = [NSURLRequest requestWithURL:url
+                                                cachePolicy:NSURLRequestReturnCacheDataElseLoad
+                                            timeoutInterval:30];
+    
+    NSURLResponse *response;
+    NSError *error;
+    
+    NSData* data = [NSURLConnection sendSynchronousRequest:urlRequest
+                                         returningResponse:&response
+                                                     error:&error];
+    
+    
+    NSArray* result = @[];
+    NSArray* object = [NSJSONSerialization
+                       JSONObjectWithData:data
+                       options:0
+                       error:&error];
+    
+    if(!error){
+        result = object[1];
+    }else{
+        NSLog(@"getGoogleSuggestion Error: %@",error);
+    }
+    
+    return result;
+}
 
 -(void)dealloc
 {
