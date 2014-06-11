@@ -85,6 +85,9 @@ Here are the three approaches:
 -(void)reset{
     [self setComposedBuffer:@""];
     [self setOriginalBuffer:@""];
+    
+    [sharedCandidates hide];
+    
     _insertionIndex = 0;
     _didConvert = NO;
 }
@@ -139,13 +142,70 @@ Here are the three approaches:
     [sharedCandidates hide];
 }
 
+// This method is called to see if your input method handles an NSResponder action.
+-(BOOL)didCommandBySelector:(SEL)aSelector client:(id)sender
+{
+    if ([self respondsToSelector:aSelector]) {
+        // The NSResponder methods like insertNewline: or deleteBackward: are
+        // methods that return void. didCommandBySelector method requires
+        // that you return YES if the command is handled and NO if you do not.
+        // This is necessary so that unhandled commands can be passed on to the
+        // client application. For that reason we need to test in the case where
+        // we might not handle the command.
+        
+        // The test here is simple.  Test to see if any text has been aded to the original buffer.
+        NSString*		bufferedText = [self originalBuffer];
+        
+        if ( bufferedText && [bufferedText length] > 0 ) {
+            if (aSelector == @selector(insertNewline:) ||
+                aSelector == @selector(deleteBackward:) ) {
+                [self performSelector:aSelector withObject:sender];
+                return YES;
+            }
+        }
+        
+    }
+    
+    return NO;
+}
+
+// When a new line is input we commit the composition.
+- (void)insertNewline:(id)sender
+{
+    [self commitComposition:sender];
+    
+}
+
+// If backspace is entered remove the preceding character and update the marked text.
+- (void)deleteBackward:(id)sender
+{
+    NSMutableString*		originalText = [self originalBuffer];
+    NSString*				convertedString;
+    
+    if ( _insertionIndex > 0 && _insertionIndex <= [originalText length] ) {
+        --_insertionIndex;
+        [originalText deleteCharactersInRange:NSMakeRange(_insertionIndex,1)];
+        convertedString = [originalText substringWithRange:NSMakeRange(0, originalText.length - 1)];
+        NSLog(@" deleteBackward convertedString: %@",convertedString);
+        [self setComposedBuffer:convertedString];
+        [sender setMarkedText:convertedString selectionRange:NSMakeRange(_insertionIndex, 0) replacementRange:NSMakeRange(NSNotFound,NSNotFound)];
+        
+        if(convertedString && convertedString.length > 3){
+            [sharedCandidates updateCandidates];
+            [sharedCandidates show:kIMKLocateCandidatesBelowHint];
+        }
+    }
+}
+
 - (BOOL) shouldIgnoreKey:(NSInteger)keyCode modifiers:(NSUInteger)flags{
-    return (keyCode == KEY_ESC ||
-                               keyCode == KEY_DELETE || keyCode == KEY_BACKSPACE ||
-                               keyCode == KEY_MOVE_LEFT || keyCode == KEY_MOVE_RIGHT ||
-                               keyCode == KEY_MOVE_DOWN ||
-                               (flags & NSCommandKeyMask) || (flags & NSControlKeyMask) ||
-                               (flags & NSAlternateKeyMask) || (flags & NSNumericPadKeyMask));
+    return (keyCode == KEY_ESC
+            || keyCode == KEY_MOVE_LEFT
+            || keyCode == KEY_MOVE_RIGHT
+            || keyCode == KEY_MOVE_DOWN
+            || (flags & NSCommandKeyMask)
+            || (flags & NSControlKeyMask)
+            || (flags & NSAlternateKeyMask)
+            || (flags & NSNumericPadKeyMask));
 }
 
 - (NSArray*)candidates:(id)sender{
@@ -163,18 +223,23 @@ Here are the three approaches:
     [_currentClient setMarkedText:[candidateString string] selectionRange:NSMakeRange(_insertionIndex, 0) replacementRange:NSMakeRange(NSNotFound,NSNotFound)];
     _insertionIndex = [candidateString length];
     
-    if(candidateString != nil && candidateString.length >= 3){
-        @try {
-            NSString *definition = (__bridge_transfer NSString *)DCSCopyTextDefinition(NULL, (__bridge CFStringRef)candidateString, CFRangeMake(0, [candidateString length]));
-            
-            NSLog(@"definition of %@ is %@",candidateString, definition);
-            
-            [sharedCandidates showAnnotation: definition];
-        }
-        @catch (NSException *exception) {
-            NSLog(@"%@", exception.reason);
-        }
-    }
+//    if(candidateString != nil && candidateString.length >= 3){
+//        @try {
+//            NSAttributedString *definition = (NSAttributedString *)DCSCopyTextDefinition(NULL, (__bridge CFStringRef)[candidateString string], CFRangeMake(0, [[candidateString string] length]));
+//            
+//            NSLog(@"definition of %@ is %@",[candidateString string], definition);
+//            
+//            if(definition && definition.length > 0){
+//                [sharedCandidates showAnnotation: [definition substringWithRange:NSMakeRange(0, 20)]];
+//            }else{
+//                [sharedCandidates showAnnotation: candidateString];
+//            }
+//            
+//        }
+//        @catch (NSException *exception) {
+//            NSLog(@"%@", exception.reason);
+//        }
+//    }
 }
 
 /*!
