@@ -184,7 +184,7 @@ Here are the three approaches:
     NSMutableString*		originalText = [self originalBuffer];
     NSString*				convertedString;
     
-    if (originalText &&  _insertionIndex > 0 && _insertionIndex <= [originalText length] ) {
+    if (_insertionIndex > 0 && _insertionIndex <= [originalText length] ) {
         --_insertionIndex;
         convertedString = [originalText substringToIndex: originalText.length - 1];
         
@@ -199,8 +199,9 @@ Here are the three approaches:
                selectionRange:NSMakeRange(_insertionIndex, 0)
               replacementRange:NSMakeRange(NSNotFound,NSNotFound)];
         
-        if(convertedString && convertedString.length > 3){
+        if(convertedString && convertedString.length >= 3){
             [sharedCandidates updateCandidates];
+//            [sharedCandidates setCandidateData:[trie everyObjectForKeyWithPrefix:[NSString stringWithString: convertedString]]];
             [sharedCandidates show:kIMKLocateCandidatesBelowHint];
         }
         return YES;
@@ -272,7 +273,7 @@ Here are the three approaches:
  @abstract   Called when a new candidate has been finally selected.
  @discussion The candidate parameter is the users final choice from the candidate window. The candidate window will have been closed before this method is called.
  */
-- (void)candidateSelected:(NSAttributedString*)candidateString
+- (void) :(NSAttributedString*)candidateString
 {
     [self setComposedBuffer:[candidateString string]];
     [self commitComposition:_currentClient];
