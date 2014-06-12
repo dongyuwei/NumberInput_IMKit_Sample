@@ -11,7 +11,7 @@ static const KeyCode
 KEY_RETURN = 36,
 KEY_DELETE = 51,
 KEY_ESC = 53,
-KEY_BACKSPACE = 117,
+//KEY_BACKSPACE = 117,
 KEY_MOVE_LEFT = 123,
 KEY_MOVE_RIGHT = 124,
 KEY_MOVE_DOWN = 125;
@@ -21,19 +21,19 @@ KEY_MOVE_DOWN = 125;
 
 /*
 Implement one of the three ways to receive input from the client. 
-Here are the three approaches:
-                 
-                 1.  Support keybinding.  
-                        In this approach the system takes each keydown and trys to map the keydown to an action method that the input method has implemented.  If an action is found the system calls didCommandBySelector:client:.  If no action method is found inputText:client: is called.  An input method choosing this approach should implement
-                        -(BOOL)inputText:(NSString*)string client:(id)sender;
-                        -(BOOL)didCommandBySelector:(SEL)aSelector client:(id)sender;
-                        
-                2. Receive all key events without the keybinding, but do "unpack" the relevant text data.
-                        Key events are broken down into the Unicodes, the key code that generated them, and modifier flags.  This data is then sent to the input method's inputText:key:modifiers:client: method.  For this approach implement:
-                        -(BOOL)inputText:(NSString*)string key:(NSInteger)keyCode modifiers:(NSUInteger)flags client:(id)sender;
-                        
-                3. Receive events directly from the Text Services Manager as NSEvent objects.  For this approach implement:
-                        -(BOOL)handleEvent:(NSEvent*)event client:(id)sender;
+Here are the three approaches:   
+
+1.  Support keybinding.  
+    In this approach the system takes each keydown and trys to map the keydown to an action method that the input method has implemented.  If an action is found the system calls didCommandBySelector:client:.  If no action method is found inputText:client: is called.  An input method choosing this approach should implement
+    -(BOOL)inputText:(NSString*)string client:(id)sender;
+    -(BOOL)didCommandBySelector:(SEL)aSelector client:(id)sender;
+    
+2. Receive all key events without the keybinding, but do "unpack" the relevant text data.
+    Key events are broken down into the Unicodes, the key code that generated them, and modifier flags.  This data is then sent to the input method's inputText:key:modifiers:client: method.  For this approach implement:
+    -(BOOL)inputText:(NSString*)string key:(NSInteger)keyCode modifiers:(NSUInteger)flags client:(id)sender;
+    
+3. Receive events directly from the Text Services Manager as NSEvent objects.  For this approach implement:
+    -(BOOL)handleEvent:(NSEvent*)event client:(id)sender;
 */
 
 
@@ -51,6 +51,21 @@ Here are the three approaches:
         return NO;
     }
     
+    if(keyCode == KEY_RETURN){
+        if([self isEmpty]){
+            [self reset];
+            return NO;
+        }else{
+            NSLog(@"composedBuffer: %@ ; originalBuffer: %@",[self composedBuffer], [self originalBuffer]);
+            [self commitComposition:sender];
+            return YES;
+        }
+    }
+    
+    if(keyCode == KEY_DELETE){
+        return [self deleteBackward:sender];
+    }
+    
     char ch = [string characterAtIndex:0];
     NSLog(@"char: %c",ch);
     if(ch >= 'a' && ch <= 'z'){
@@ -65,6 +80,22 @@ Here are the three approaches:
     }
     
     return handled;
+}
+
+- (BOOL) isEmpty{
+    NSString* text = [self composedBuffer];
+    if (!text || [text length] == 0 ) {
+        text = [self originalBuffer];
+    }
+    
+    if(text && text.length > 0 ){
+        NSString *trimmed = [text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+        
+        if(trimmed && trimmed.length > 0){
+            return NO;
+        }
+    }
+    return YES;
 }
 
 -(void)commitComposition:(id)sender
@@ -121,10 +152,13 @@ Here are the three approaches:
 // Add newly input text to the original buffer.
 -(void)originalBufferAppend:(NSString*)string client:(id)sender
 {
-    NSMutableString*		buffer = [self originalBuffer];
+    NSMutableString* buffer = [self originalBuffer];
     [buffer appendString: string];
     _insertionIndex++;
-    [sender setMarkedText:buffer selectionRange:NSMakeRange(0, [buffer length]) replacementRange:NSMakeRange(NSNotFound, NSNotFound)];
+    
+    [sender setMarkedText:buffer
+           selectionRange:NSMakeRange(0, [buffer length])
+         replacementRange:NSMakeRange(NSNotFound, NSNotFound)];
 }
 
 // Change the original buffer.
@@ -135,65 +169,43 @@ Here are the three approaches:
 }
 
 - (void) activateServer:(id)client{
-    NSLog(@"him activateServer");
+    NSLog(@"activateServer");
+    [self reset];
 }
 
 -(void)deactivateServer:(id)sender {
-    [sharedCandidates hide];
-}
-
-// This method is called to see if your input method handles an NSResponder action.
--(BOOL)didCommandBySelector:(SEL)aSelector client:(id)sender
-{
-    if ([self respondsToSelector:aSelector]) {
-        // The NSResponder methods like insertNewline: or deleteBackward: are
-        // methods that return void. didCommandBySelector method requires
-        // that you return YES if the command is handled and NO if you do not.
-        // This is necessary so that unhandled commands can be passed on to the
-        // client application. For that reason we need to test in the case where
-        // we might not handle the command.
-        
-        // The test here is simple.  Test to see if any text has been aded to the original buffer.
-        NSString*		bufferedText = [self originalBuffer];
-        
-        if ( bufferedText && [bufferedText length] > 0 ) {
-            if (aSelector == @selector(insertNewline:) ||
-                aSelector == @selector(deleteBackward:) ) {
-                [self performSelector:aSelector withObject:sender];
-                return YES;
-            }
-        }
-        
-    }
-    
-    return NO;
-}
-
-// When a new line is input we commit the composition.
-- (void)insertNewline:(id)sender
-{
-    [self commitComposition:sender];
-    
+    NSLog(@"deactivateServer");
+    [self reset];
 }
 
 // If backspace is entered remove the preceding character and update the marked text.
-- (void)deleteBackward:(id)sender
+- (BOOL)deleteBackward:(id)sender
 {
     NSMutableString*		originalText = [self originalBuffer];
     NSString*				convertedString;
     
-    if ( _insertionIndex > 0 && _insertionIndex <= [originalText length] ) {
+    if (originalText &&  _insertionIndex > 0 && _insertionIndex <= [originalText length] ) {
         --_insertionIndex;
-        [originalText deleteCharactersInRange:NSMakeRange(_insertionIndex,1)];
-        convertedString = [originalText substringWithRange:NSMakeRange(0, originalText.length - 1)];
+        convertedString = [originalText substringToIndex: originalText.length - 1];
+        
+        [originalText deleteCharactersInRange: NSMakeRange(_insertionIndex,1)];
+        
         NSLog(@" deleteBackward convertedString: %@",convertedString);
+        
         [self setComposedBuffer:convertedString];
-        [sender setMarkedText:convertedString selectionRange:NSMakeRange(_insertionIndex, 0) replacementRange:NSMakeRange(NSNotFound,NSNotFound)];
+        [self setOriginalBuffer:convertedString];
+        
+        [sender setMarkedText:convertedString
+               selectionRange:NSMakeRange(_insertionIndex, 0)
+              replacementRange:NSMakeRange(NSNotFound,NSNotFound)];
         
         if(convertedString && convertedString.length > 3){
             [sharedCandidates updateCandidates];
             [sharedCandidates show:kIMKLocateCandidatesBelowHint];
         }
+        return YES;
+    }else{
+        return NO;
     }
 }
 
@@ -211,7 +223,7 @@ Here are the three approaches:
 - (NSArray*)candidates:(id)sender{
     NSMutableString* buffer = [self originalBuffer];
     NSLog(@"buffer: %@",buffer);
-    if(buffer != nil && buffer.length >= 3){
+    if(buffer && buffer.length >= 3){
         return [trie everyObjectForKeyWithPrefix:[NSString stringWithString: buffer]];
     }else{
         return @[];
@@ -219,27 +231,40 @@ Here are the three approaches:
 }
 
 - (void)candidateSelectionChanged:(NSAttributedString*)candidateString{
-    NSLog(@"candidateSelectionChanged, %@", candidateString);
-    [_currentClient setMarkedText:[candidateString string] selectionRange:NSMakeRange(_insertionIndex, 0) replacementRange:NSMakeRange(NSNotFound,NSNotFound)];
+    NSLog(@"candidateSelectionChanged, %@", [candidateString string]);
+    
+    [_currentClient setMarkedText:[candidateString string]
+                   selectionRange:NSMakeRange(_insertionIndex, 0)
+                 replacementRange:NSMakeRange(NSNotFound,NSNotFound)];
+    
     _insertionIndex = [candidateString length];
     
-//    if(candidateString != nil && candidateString.length >= 3){
-//        @try {
-//            NSAttributedString *definition = (NSAttributedString *)DCSCopyTextDefinition(NULL, (__bridge CFStringRef)[candidateString string], CFRangeMake(0, [[candidateString string] length]));
-//            
-//            NSLog(@"definition of %@ is %@",[candidateString string], definition);
-//            
-//            if(definition && definition.length > 0){
-//                [sharedCandidates showAnnotation: [definition substringWithRange:NSMakeRange(0, 20)]];
-//            }else{
-//                [sharedCandidates showAnnotation: candidateString];
-//            }
-//            
-//        }
-//        @catch (NSException *exception) {
-//            NSLog(@"%@", exception.reason);
-//        }
-//    }
+//    [self showDefinitionOfWord:candidateString];
+}
+
+- (void)showDefinitionOfWord:(NSAttributedString*)candidateString{
+    if(candidateString && candidateString.length >= 3){
+        @try {
+            NSAttributedString *definition = (NSAttributedString *)DCSCopyTextDefinition(NULL,
+                    (__bridge CFStringRef)[candidateString string], CFRangeMake(0, [[candidateString string] length]));
+            
+            NSLog(@"definition of %@ is %@",[candidateString string], definition);
+            
+            if(definition && definition.length > 0){
+                NSString * defi = [definition string];
+                NSRange range = [defi rangeOfString:@"^\\s*" options:NSRegularExpressionSearch];
+                defi = [defi stringByReplacingCharactersInRange:range withString:@""];
+                
+                [sharedCandidates showAnnotation: [defi substringWithRange:NSMakeRange(0, 17)]];
+            }else{
+                [sharedCandidates showAnnotation: candidateString];
+            }
+            
+        }
+        @catch (NSException *exception) {
+            NSLog(@"%@", exception.reason);
+        }
+    }
 }
 
 /*!

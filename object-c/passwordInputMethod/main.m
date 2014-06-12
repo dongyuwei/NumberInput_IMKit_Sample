@@ -13,7 +13,7 @@ NDMutableTrie* buildTrieFromFile(){
                                                      ofType:@"json"];
     
     NSInputStream *inputStream = [[NSInputStream alloc] initWithFileAtPath: path];
-    [inputStream open];
+    [inputStream  open];
     NSMutableArray *wordList = [NSJSONSerialization JSONObjectWithStream:inputStream
                                                                  options:nil
                                                                    error:nil];
