@@ -209,7 +209,7 @@ Here are the three approaches:
     NSLog(@"him activateServer");
 }
 
--(void)deactivateServer:(id)sender {
+-(void) :(id)sender {
     [sharedCandidates hide];
 }
 
@@ -217,7 +217,9 @@ Here are the three approaches:
     NSMutableString* buffer = [self originalBuffer];
     NSLog(@"buffer: %@",buffer);
     if(buffer != nil && buffer.length >= 3){
-        return [trie everyObjectForKeyWithPrefix:[NSString stringWithString: buffer]];
+        //todo: filter the duplicated  word.
+        NSArray* suggestion = [self getBaiduDictSuggestion: buffer];
+        return [suggestion arrayByAddingObjectsFromArray: [trie everyObjectForKeyWithPrefix:[NSString stringWithString: buffer]] ];
     }else{
         return @[];
     }
@@ -267,6 +269,47 @@ Here are the three approaches:
     [self commitComposition:_currentClient];
     
     NSLog(@"candidateSelected, %@", candidateString);
+}
+
+- (NSArray*) getBaiduDictSuggestion: (NSString*)word{
+    NSArray* result = @[];
+    
+    NSString* query = [NSString stringWithFormat: @"http://nssug.baidu.com/su?prod=recon_dict&wd=%@", word];
+    NSURL * url = [[NSURL alloc] initWithString: query];
+    
+    NSURLRequest *urlRequest = [NSURLRequest requestWithURL:url
+                                                cachePolicy:NSURLRequestReturnCacheDataElseLoad
+                                            timeoutInterval:30];
+    
+    NSURLResponse *response;
+    NSError *error;
+    
+    NSData* data = [NSURLConnection sendSynchronousRequest:urlRequest
+                                         returningResponse:&response
+                                                     error:&error];
+    
+    NSString* str = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    NSArray *chunks = [str componentsSeparatedByString: @"s:"];
+    if(chunks && chunks.count > 1){
+        NSArray *chunks2 = [chunks[1] componentsSeparatedByString: @"});"];
+        
+        if(chunks2 && chunks2.count != 0){
+            NSData *data2 = [chunks2[0] dataUsingEncoding:NSUTF8StringEncoding];
+            
+            result = [NSJSONSerialization
+                      JSONObjectWithData:data2
+                      options:0
+                      error:&error];
+            
+//            NSLog(@"baidu dict suggestion is %@", result);
+        }
+    }
+    
+    if(error){
+        NSLog(@"getBaiduDictSuggestion Error: %@",error);
+    }
+    
+    return result;
 }
 
 - (NSArray*) getGoogleSuggestion: (NSString*)word{
