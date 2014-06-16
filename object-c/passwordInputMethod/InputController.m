@@ -8,9 +8,9 @@ extern NDMutableTrie*  trie;
 
 typedef NSInteger KeyCode;
 static const KeyCode
-//KEY_RETURN = 36,
+KEY_RETURN = 36,
 KEY_DELETE = 51,
-//KEY_ESC = 53,
+KEY_ESC = 53,
 KEY_BACKSPACE = 117,
 KEY_MOVE_LEFT = 123,
 KEY_MOVE_RIGHT = 124,
@@ -56,6 +56,28 @@ Here are the three approaches:
         
         if ( bufferedText && [bufferedText length] > 0 ) {
             return [self deleteBackward:sender];
+        }
+        return NO;
+    }
+    
+    if(keyCode == KEY_RETURN){
+        NSString*		bufferedText = [self originalBuffer];
+        
+        if ( bufferedText && [bufferedText length] > 0 ) {
+            [self commitComposition:sender];
+            return YES;
+        }
+        return NO;
+    }
+    
+    if(keyCode == KEY_ESC){
+        NSString*		bufferedText = [self originalBuffer];
+        
+        if ( bufferedText && [bufferedText length] > 0 ) {
+            [self cancelComposition];
+            [self commitComposition:sender];
+
+            return YES;
         }
         return NO;
     }
@@ -135,6 +157,7 @@ Here are the three approaches:
     [self setOriginalBuffer:@""];
     _insertionIndex = 0;
     _didConvert = NO;
+    [sharedCandidates hide];
 }
 
 // Return the composed buffer.  If it is NIL create it.
