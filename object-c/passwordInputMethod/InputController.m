@@ -44,8 +44,6 @@ Here are the three approaches:
     
     _currentClient = sender;
     
-    BOOL handled = NO;
-    
     if ([self shouldIgnoreKey:keyCode modifiers:flags]){
         [self reset];
         return NO;
@@ -60,9 +58,9 @@ Here are the three approaches:
         return NO;
     }
     
+    NSString*		bufferedText = [self originalBuffer];
+    
     if(keyCode == KEY_RETURN){
-        NSString*		bufferedText = [self originalBuffer];
-        
         if ( bufferedText && [bufferedText length] > 0 ) {
             [self commitComposition:sender];
             return YES;
@@ -71,8 +69,6 @@ Here are the three approaches:
     }
     
     if(keyCode == KEY_ESC){
-        NSString*		bufferedText = [self originalBuffer];
-        
         if ( bufferedText && [bufferedText length] > 0 ) {
             [self cancelComposition];
             [self commitComposition:sender];
@@ -88,13 +84,20 @@ Here are the three approaches:
 
         [sharedCandidates updateCandidates];
         [sharedCandidates show:kIMKLocateCandidatesBelowHint];
-        handled = YES;
+        return YES;
     }else{
-        [sharedCandidates hide];
-        handled = NO;
+        if ( bufferedText && [bufferedText length] > 0 ) {
+            [self originalBufferAppend:string client:sender];
+            [self commitComposition: sender];
+            return YES;
+        }else{
+            [sharedCandidates hide];
+            return NO;
+        }
+        
     }
     
-    return handled;
+    return NO;
 }
 
 // If backspace is entered remove the preceding character and update the marked text.
