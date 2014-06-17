@@ -215,14 +215,19 @@ Here are the three approaches:
 
 - (NSArray*)candidates:(id)sender{
     NSMutableString* buffer = [self originalBuffer];
+    NSArray* result = @[];
     NSLog(@"buffer: %@",buffer);
     if(buffer != nil && buffer.length >= 3){
-        //todo: filter the duplicated  word.
-        NSArray* suggestion = [self getBaiduDictSuggestion: buffer];
-        return [suggestion arrayByAddingObjectsFromArray: [trie everyObjectForKeyWithPrefix:[NSString stringWithString: buffer]] ];
-    }else{
-        return @[];
+        NSArray* filtered = [trie everyObjectForKeyWithPrefix:[NSString stringWithString: buffer]];
+        if(filtered){
+            if(filtered.count >= 100){
+                result = [filtered subarrayWithRange:NSMakeRange(0, 99)];
+            }else{
+                result = filtered;
+            }
+        }
     }
+    return result;
 }
 
 - (void)candidateSelectionChanged:(NSAttributedString*)candidateString{
@@ -274,42 +279,52 @@ Here are the three approaches:
 - (NSArray*) getBaiduDictSuggestion: (NSString*)word{
     NSArray* result = @[];
     
-    NSString* query = [NSString stringWithFormat: @"http://nssug.baidu.com/su?prod=recon_dict&wd=%@", word];
-    NSURL * url = [[NSURL alloc] initWithString: query];
-    
-    NSURLRequest *urlRequest = [NSURLRequest requestWithURL:url
-                                                cachePolicy:NSURLRequestReturnCacheDataElseLoad
-                                            timeoutInterval:30];
-    
-    NSURLResponse *response;
-    NSError *error;
-    
-    NSData* data = [NSURLConnection sendSynchronousRequest:urlRequest
-                                         returningResponse:&response
-                                                     error:&error];
-    
-    NSString* str = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    NSArray *chunks = [str componentsSeparatedByString: @"s:"];
-    if(chunks && chunks.count > 1){
-        NSArray *chunks2 = [chunks[1] componentsSeparatedByString: @"});"];
+    @try {
+        NSString* query = [NSString stringWithFormat: @"http://nssug.baidu.com/su?prod=recon_dict&wd=%@", word];
+        NSURL * url = [[NSURL alloc] initWithString: query];
         
-        if(chunks2 && chunks2.count != 0){
-            NSData *data2 = [chunks2[0] dataUsingEncoding:NSUTF8StringEncoding];
+        NSURLRequest *urlRequest = [NSURLRequest requestWithURL:url
+                                                    cachePolicy:NSURLRequestReturnCacheDataElseLoad
+                                                timeoutInterval:30];
+        
+        NSURLResponse *response;
+        NSError *error;
+        
+        NSData* data = [NSURLConnection sendSynchronousRequest:urlRequest
+                                             returningResponse:&response
+                                                         error:&error];
+        if(error){
+            NSLog(@"getBaiduDictSuggestion Error: %@, the word prefix is:%@",error, word);
+            return result;
+        }
+        
+        NSString* str = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        NSArray *chunks = [str componentsSeparatedByString: @"s:"];
+        if(chunks && chunks.count > 1){
+            NSArray *chunks2 = [chunks[1] componentsSeparatedByString: @"});"];
             
-            result = [NSJSONSerialization
-                      JSONObjectWithData:data2
-                      options:0
-                      error:&error];
-            
-//            NSLog(@"baidu dict suggestion is %@", result);
+            if(chunks2 && chunks2.count != 0){
+                NSData *data2 = [chunks2[0] dataUsingEncoding:NSUTF8StringEncoding];
+                
+                result = [NSJSONSerialization
+                          JSONObjectWithData:data2
+                          options:0
+                          error:&error];
+                
+                NSLog(@"baidu dict suggestion is %@", result);
+            }
+        }
+        
+        if(error){
+            NSLog(@"getBaiduDictSuggestion Error: %@, the word prefix is:%@",error, word);
         }
     }
-    
-    if(error){
-        NSLog(@"getBaiduDictSuggestion Error: %@",error);
+    @catch (NSException *exception) {
+        NSLog(@"getBaiduDictSuggestion Error: %@, the word prefix is:%@",exception, word);
     }
-    
-    return result;
+    @finally {
+        return result;
+    }
 }
 
 - (NSArray*) getGoogleSuggestion: (NSString*)word{
