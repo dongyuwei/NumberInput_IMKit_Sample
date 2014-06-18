@@ -222,12 +222,14 @@ Here are the three approaches:
     
     if(buffer != nil && buffer.length >= 3){
         NSArray* filtered = [trie everyObjectForKeyWithPrefix:[NSString stringWithString: buffer]];
-        NSArray* candidateList = [self getFrequentWords: [NSMutableArray arrayWithArray: filtered] ];
+        NSMutableArray* candidateList = [NSMutableArray arrayWithArray:[self getFrequentWords:[NSMutableArray arrayWithArray:filtered]]];
         if(candidateList){
+            [candidateList removeObject:buffer];
+            [candidateList insertObject:buffer atIndex:0];
             if(candidateList.count >= 100){
                 result = [candidateList subarrayWithRange:NSMakeRange(0, 99)];
             }else{
-                result = candidateList;
+                result = [NSArray arrayWithArray: candidateList];
             }
         }
     }
