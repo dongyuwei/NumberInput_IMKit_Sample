@@ -7,6 +7,7 @@ const NSString* kConnectionName = @"Hallelujah_1_Connection";
 IMKServer*      server;
 IMKCandidates*  sharedCandidates;
 NDMutableTrie*  trie;
+NSArray*        frequentWords;
 
 NDMutableTrie* buildTrieFromFile(){
     NSString* path = [[NSBundle mainBundle] pathForResource:@"words"
@@ -20,6 +21,17 @@ NDMutableTrie* buildTrieFromFile(){
     [inputStream close];
     
     return [NDMutableTrie trieWithArray: wordList];
+}
+
+NSArray* frequentWordList(){
+    NSString* path = [[NSBundle mainBundle] pathForResource:@"google-10000-english"
+                                                     ofType:@"txt"];
+    
+    NSString         * str =[NSString stringWithContentsOfFile:path
+                                                            encoding:NSUTF8StringEncoding
+                                                               error:nil];
+    NSArray   * list = [str componentsSeparatedByString:@"\n"];
+    return list;
 }
 
 int main(int argc, char *argv[])
@@ -38,6 +50,7 @@ int main(int argc, char *argv[])
     }
     
     trie =  buildTrieFromFile();
+    frequentWords = frequentWordList();
     
     [[NSBundle mainBundle] loadNibNamed:@"MainMenu"
                                   owner:[NSApplication sharedApplication]

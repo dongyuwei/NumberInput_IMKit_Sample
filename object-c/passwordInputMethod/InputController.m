@@ -4,6 +4,7 @@
 
 extern IMKCandidates *sharedCandidates;
 extern NDMutableTrie*  trie;
+extern NSArray* frequentWords;
 
 
 typedef NSInteger KeyCode;
@@ -216,18 +217,30 @@ Here are the three approaches:
 - (NSArray*)candidates:(id)sender{
     NSMutableString* buffer = [self originalBuffer];
     NSArray* result = @[];
+    
     NSLog(@"buffer: %@",buffer);
+    
     if(buffer != nil && buffer.length >= 3){
         NSArray* filtered = [trie everyObjectForKeyWithPrefix:[NSString stringWithString: buffer]];
-        if(filtered){
-            if(filtered.count >= 100){
-                result = [filtered subarrayWithRange:NSMakeRange(0, 99)];
+        NSArray* candidateList = [self getFrequentWords: [NSMutableArray arrayWithArray: filtered] ];
+        if(candidateList){
+            if(candidateList.count >= 100){
+                result = [candidateList subarrayWithRange:NSMakeRange(0, 99)];
             }else{
-                result = filtered;
+                result = candidateList;
             }
         }
     }
     return result;
+}
+
+-(NSArray*)getFrequentWords:(NSMutableArray*) filtered{
+    NSMutableSet *frequent = [NSMutableSet setWithArray:filtered];
+    [frequent intersectSet:[NSSet setWithArray:frequentWords]];
+    NSMutableArray* frequentList = [NSMutableArray arrayWithArray: [frequent allObjects]];
+    [filtered removeObjectsInArray:frequentList];
+    [frequentList addObjectsFromArray:filtered];
+    return frequentList;
 }
 
 - (void)candidateSelectionChanged:(NSAttributedString*)candidateString{
