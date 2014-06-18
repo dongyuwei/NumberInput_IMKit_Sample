@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0D29160419517B6900C4CE58 /* google-10000-english.txt in Resources */ = {isa = PBXBuildFile; fileRef = 0D29160319517B6900C4CE58 /* google-10000-english.txt */; };
+		0D29160819519CE500C4CE58 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D29160719519CE500C4CE58 /* AppKit.framework */; };
 		0D2BFD8F194588F400DE18D9 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0D2BFD8E194588F400DE18D9 /* Images.xcassets */; };
 		0D2BFD911945890B00DE18D9 /* him.tiff in Resources */ = {isa = PBXBuildFile; fileRef = 0D2BFD901945890B00DE18D9 /* him.tiff */; };
 		0D2BFD9319470D1000DE18D9 /* words.json in Resources */ = {isa = PBXBuildFile; fileRef = 0D2BFD9219470D1000DE18D9 /* words.json */; };
@@ -24,6 +25,7 @@
 /* Begin PBXFileReference section */
 		089C165DFE840E0CC02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		0D29160319517B6900C4CE58 /* google-10000-english.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "google-10000-english.txt"; path = "dictionary/google-10000-english.txt"; sourceTree = "<group>"; };
+		0D29160719519CE500C4CE58 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		0D2BFD8E194588F400DE18D9 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = hallelujah/Images.xcassets; sourceTree = "<group>"; };
 		0D2BFD901945890B00DE18D9 /* him.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = him.tiff; sourceTree = "<group>"; };
 		0D2BFD9219470D1000DE18D9 /* words.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = words.json; sourceTree = "<group>"; };
@@ -48,6 +50,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0D29160819519CE500C4CE58 /* AppKit.framework in Frameworks */,
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
 				E93074B70A5C264700470842 /* InputMethodKit.framework in Frameworks */,
 			);
@@ -131,6 +134,7 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				0D29160719519CE500C4CE58 /* AppKit.framework */,
 				0D376F6A1949892900EF1E22 /* WebKit.framework */,
 				1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */,
 				1058C7A2FEA54F0111CA2CBB /* Other Frameworks */,

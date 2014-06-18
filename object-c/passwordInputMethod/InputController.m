@@ -1,5 +1,6 @@
 #import "InputController.h"
 #import "NDTrie.h"
+#import <AppKit/NSSpellChecker.h>
 #import <CoreServices/CoreServices.h>
 
 extern IMKCandidates *sharedCandidates;
@@ -218,28 +219,45 @@ Here are the three approaches:
 
 - (NSArray*)candidates:(id)sender{
     NSMutableString* buffer = [self originalBuffer];
-    NSArray* result = @[];
-    
-    NSLog(@"buffer: %@",buffer);
+    NSMutableArray* result = [[NSMutableArray alloc] init];
     
     if(buffer != nil && buffer.length >= 3){
         NSArray* filtered = [trie everyObjectForKeyWithPrefix:[NSString stringWithString: buffer]];
+        
         if(filtered && filtered.count > 0){
             NSMutableArray* candidateList = [NSMutableArray arrayWithArray:
                                              [self getFrequentWords:[NSMutableArray arrayWithArray:filtered]]];
-            if(candidateList){
-                [candidateList removeObject:buffer];
-                [candidateList insertObject:buffer atIndex:0];
-                if(candidateList.count >= 100){
-                    result = [candidateList subarrayWithRange:NSMakeRange(0, 99)];
-                }else{
-                    result = [NSArray arrayWithArray: candidateList];
-                }
+            if(candidateList && candidateList.count > 0){
+                result = candidateList;
+            }else{
+                result = [NSMutableArray arrayWithArray:filtered];
             }
+        }else{
+            result = [self getSuggestionOfSpellChecker:buffer];
         }
         
     }
-    return result;
+    
+    [result removeObject:buffer];
+    [result insertObject:buffer atIndex:0];
+    
+    if(result.count >= 100){
+        return [result subarrayWithRange:NSMakeRange(0, 99)];
+    }
+    
+    return [NSArray arrayWithArray:result];
+}
+
+-(NSMutableArray*)getSuggestionOfSpellChecker:(NSString*)buffer{
+    NSSpellChecker* checker = [NSSpellChecker sharedSpellChecker];
+    NSRange range = NSMakeRange(0, [buffer length]);
+    NSMutableArray* suggestion = [NSMutableArray arrayWithArray:
+                                  [checker guessesForWordRange:range
+                                                      inString:buffer
+                                                      language:@"en"
+                                        inSpellDocumentWithTag:0]];
+    
+    return suggestion;
 }
 
 -(NSArray*)getFrequentWords:(NSMutableArray*) filtered{
