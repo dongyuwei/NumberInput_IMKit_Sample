@@ -232,14 +232,20 @@ Here are the three approaches:
             }else{
                 result = [NSMutableArray arrayWithArray:filtered];
             }
+            
+            [result removeObject:buffer];
+            [result insertObject:buffer atIndex:0];
         }else{
             result = [self getSuggestionOfSpellChecker:buffer];
+            
+            [result removeObject:buffer];
+            if(result.count > 1){
+                [result insertObject:buffer atIndex:1];
+            }else{
+                [result insertObject:buffer atIndex:0];
+            }
         }
-        
     }
-    
-    [result removeObject:buffer];
-    [result insertObject:buffer atIndex:0];
     
     if(result.count >= 100){
         return [result subarrayWithRange:NSMakeRange(0, 99)];
