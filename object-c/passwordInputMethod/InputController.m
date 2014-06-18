@@ -150,8 +150,10 @@ Here are the three approaches:
     }
     
     NSLog(@"commitComposition: %@",text);
-    
-    [sender insertText:[text stringByAppendingString:@" "] replacementRange:NSMakeRange(NSNotFound, NSNotFound)];
+    if (_candidateSelected){
+        text = [text stringByAppendingString:@" "];
+    }
+    [sender insertText:text replacementRange:NSMakeRange(NSNotFound, NSNotFound)];
     
     [self reset];
 }
@@ -160,8 +162,8 @@ Here are the three approaches:
     [self setComposedBuffer:@""];
     [self setOriginalBuffer:@""];
     _insertionIndex = 0;
-    _didConvert = NO;
     [sharedCandidates hide];
+    _candidateSelected = NO; 
 }
 
 // Return the composed buffer.  If it is NIL create it.
@@ -222,16 +224,20 @@ Here are the three approaches:
     
     if(buffer != nil && buffer.length >= 3){
         NSArray* filtered = [trie everyObjectForKeyWithPrefix:[NSString stringWithString: buffer]];
-        NSMutableArray* candidateList = [NSMutableArray arrayWithArray:[self getFrequentWords:[NSMutableArray arrayWithArray:filtered]]];
-        if(candidateList){
-            [candidateList removeObject:buffer];
-            [candidateList insertObject:buffer atIndex:0];
-            if(candidateList.count >= 100){
-                result = [candidateList subarrayWithRange:NSMakeRange(0, 99)];
-            }else{
-                result = [NSArray arrayWithArray: candidateList];
+        if(filtered && filtered.count > 0){
+            NSMutableArray* candidateList = [NSMutableArray arrayWithArray:
+                                             [self getFrequentWords:[NSMutableArray arrayWithArray:filtered]]];
+            if(candidateList){
+                [candidateList removeObject:buffer];
+                [candidateList insertObject:buffer atIndex:0];
+                if(candidateList.count >= 100){
+                    result = [candidateList subarrayWithRange:NSMakeRange(0, 99)];
+                }else{
+                    result = [NSArray arrayWithArray: candidateList];
+                }
             }
         }
+        
     }
     return result;
 }
@@ -285,6 +291,7 @@ Here are the three approaches:
  */
 - (void)candidateSelected:(NSAttributedString*)candidateString
 {
+    _candidateSelected = YES;
     [self setComposedBuffer:[candidateString string]];
     [self commitComposition:_currentClient];
     

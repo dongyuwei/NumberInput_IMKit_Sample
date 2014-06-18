@@ -14,6 +14,8 @@
     BOOL							_didConvert;
     //the current active client.
     id								_currentClient;
+    
+    BOOL                            _candidateSelected;
 }
 
 //These are simple methods for managing our composition and original buffers
