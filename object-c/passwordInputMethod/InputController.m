@@ -122,7 +122,7 @@ Here are the three approaches:
              replacementRange:NSMakeRange(NSNotFound,NSNotFound)];
         
         if(convertedString && convertedString.length >= 3){
-            [sharedCandidates setCandidateData:[trie everyObjectForKeyWithPrefix:[NSString stringWithString: convertedString]]];
+            [sharedCandidates updateCandidates];
             [sharedCandidates show:kIMKLocateCandidatesBelowHint];
         }
         return YES;
