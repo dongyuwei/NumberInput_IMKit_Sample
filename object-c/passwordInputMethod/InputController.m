@@ -221,7 +221,7 @@ Here are the three approaches:
     NSMutableString* buffer = [self originalBuffer];
     NSMutableArray* result = [[NSMutableArray alloc] init];
     
-    if(buffer != nil && buffer.length >= 3){
+    if(buffer){
         NSArray* filtered = [trie everyObjectForKeyWithPrefix:[NSString stringWithString: buffer]];
         
         if(filtered && filtered.count > 0){
@@ -232,23 +232,16 @@ Here are the three approaches:
             }else{
                 result = [NSMutableArray arrayWithArray:filtered];
             }
-            
-            [result removeObject:buffer];
-            [result insertObject:buffer atIndex:0];
         }else{
             result = [self getSuggestionOfSpellChecker:buffer];
-            
-            [result removeObject:buffer];
-            if(result.count > 1){
-                [result insertObject:buffer atIndex:1];
-            }else{
-                [result insertObject:buffer atIndex:0];
-            }
         }
-    }
-    
-    if(result.count >= 100){
-        return [result subarrayWithRange:NSMakeRange(0, 99)];
+        
+        if(result.count >= 100){
+            result = [NSMutableArray arrayWithArray: [result subarrayWithRange:NSMakeRange(0, 99)]];
+        }
+        
+        [result removeObject:buffer];
+        [result insertObject:buffer atIndex:0];
     }
     
     return [NSArray arrayWithArray:result];
