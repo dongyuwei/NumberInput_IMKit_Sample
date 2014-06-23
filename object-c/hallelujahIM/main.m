@@ -7,31 +7,20 @@ const NSString* kConnectionName = @"Hallelujah_1_Connection";
 IMKServer*      server;
 IMKCandidates*  sharedCandidates;
 NDMutableTrie*  trie;
-NSArray*        frequentWords;
+NSDictionary* wordsWithFrequency;
 
 NDMutableTrie* buildTrieFromFile(){
-    NSString* path = [[NSBundle mainBundle] pathForResource:@"google-333333-words"
+    NSString* path = [[NSBundle mainBundle] pathForResource:@"google_333333_words"
                                                      ofType:@"json"];
     
     NSInputStream *inputStream = [[NSInputStream alloc] initWithFileAtPath: path];
     [inputStream  open];
-    NSMutableArray *wordList = [NSJSONSerialization JSONObjectWithStream:inputStream
+    wordsWithFrequency  = [NSJSONSerialization JSONObjectWithStream:inputStream
                                                                  options:nil
                                                                    error:nil];
     [inputStream close];
     
-    return [NDMutableTrie trieWithArray: wordList];
-}
-
-NSArray* frequentWordList(){
-    NSString* path = [[NSBundle mainBundle] pathForResource:@"google-10000-english"
-                                                     ofType:@"txt"];
-    
-    NSString         * str =[NSString stringWithContentsOfFile:path
-                                                            encoding:NSUTF8StringEncoding
-                                                               error:nil];
-    NSArray   * list = [str componentsSeparatedByString:@"\n"];
-    return list;
+    return [NDMutableTrie trieWithArray: [wordsWithFrequency allKeys]];
 }
 
 int main(int argc, char *argv[])
@@ -50,7 +39,6 @@ int main(int argc, char *argv[])
     }
     
     trie =  buildTrieFromFile();
-    frequentWords = frequentWordList();
     
     [[NSBundle mainBundle] loadNibNamed:@"MainMenu"
                                   owner:[NSApplication sharedApplication]

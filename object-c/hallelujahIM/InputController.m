@@ -5,7 +5,7 @@
 
 extern IMKCandidates *sharedCandidates;
 extern NDMutableTrie*  trie;
-extern NSArray* frequentWords;
+extern NSDictionary* wordsWithFrequency;
 
 
 typedef NSInteger KeyCode;
@@ -25,17 +25,17 @@ KEY_MOVE_DOWN = 125;
 Implement one of the three ways to receive input from the client. 
 Here are the three approaches:
                  
-                 1.  Support keybinding.  
-                        In this approach the system takes each keydown and trys to map the keydown to an action method that the input method has implemented.  If an action is found the system calls didCommandBySelector:client:.  If no action method is found inputText:client: is called.  An input method choosing this approach should implement
-                        -(BOOL)inputText:(NSString*)string client:(id)sender;
-                        -(BOOL)didCommandBySelector:(SEL)aSelector client:(id)sender;
-                        
-                2. Receive all key events without the keybinding, but do "unpack" the relevant text data.
-                        Key events are broken down into the Unicodes, the key code that generated them, and modifier flags.  This data is then sent to the input method's inputText:key:modifiers:client: method.  For this approach implement:
-                        -(BOOL)inputText:(NSString*)string key:(NSInteger)keyCode modifiers:(NSUInteger)flags client:(id)sender;
-                        
-                3. Receive events directly from the Text Services Manager as NSEvent objects.  For this approach implement:
-                        -(BOOL)handleEvent:(NSEvent*)event client:(id)sender;
+ 1.  Support keybinding.  
+        In this approach the system takes each keydown and trys to map the keydown to an action method that the input method has implemented.  If an action is found the system calls didCommandBySelector:client:.  If no action method is found inputText:client: is called.  An input method choosing this approach should implement
+        -(BOOL)inputText:(NSString*)string client:(id)sender;
+        -(BOOL)didCommandBySelector:(SEL)aSelector client:(id)sender;
+        
+2. Receive all key events without the keybinding, but do "unpack" the relevant text data.
+        Key events are broken down into the Unicodes, the key code that generated them, and modifier flags.  This data is then sent to the input method's inputText:key:modifiers:client: method.  For this approach implement:
+        -(BOOL)inputText:(NSString*)string key:(NSInteger)keyCode modifiers:(NSUInteger)flags client:(id)sender;
+        
+3. Receive events directly from the Text Services Manager as NSEvent objects.  For this approach implement:
+        -(BOOL)handleEvent:(NSEvent*)event client:(id)sender;
 */
 
 
@@ -122,7 +122,7 @@ Here are the three approaches:
                selectionRange:NSMakeRange(_insertionIndex, 0)
              replacementRange:NSMakeRange(NSNotFound,NSNotFound)];
         
-        if(convertedString && convertedString.length >= 3){
+        if(convertedString){
             [sharedCandidates updateCandidates];
             [sharedCandidates show:kIMKLocateCandidatesBelowHint];
         }
@@ -225,10 +225,9 @@ Here are the three approaches:
         NSArray* filtered = [trie everyObjectForKeyWithPrefix:[NSString stringWithString: buffer]];
         
         if(filtered && filtered.count > 0){
-            NSMutableArray* candidateList = [NSMutableArray arrayWithArray:
-                                             [self getFrequentWords:[NSMutableArray arrayWithArray:filtered]]];
-            if(candidateList && candidateList.count > 0){
-                result = candidateList;
+            NSMutableArray* frequentWords = [NSMutableArray arrayWithArray:[self sortByFrequency:filtered]];
+            if(frequentWords && frequentWords.count > 0){
+                result = frequentWords;
             }else{
                 result = [NSMutableArray arrayWithArray:filtered];
             }
@@ -259,13 +258,19 @@ Here are the three approaches:
     return suggestion;
 }
 
--(NSArray*)getFrequentWords:(NSMutableArray*) filtered{
-    NSMutableSet *frequent = [NSMutableSet setWithArray:filtered];
-    [frequent intersectSet:[NSSet setWithArray:frequentWords]];
-    NSMutableArray* frequentList = [NSMutableArray arrayWithArray: [frequent allObjects]];
-    [filtered removeObjectsInArray:frequentList];
-    [frequentList addObjectsFromArray:filtered];
-    return frequentList;
+-(NSArray*)sortByFrequency:(NSArray*) filtered{
+    NSArray *sorted = [filtered sortedArrayUsingComparator:^NSComparisonResult(id w1, id w2) {
+        int n = [[wordsWithFrequency objectForKey: w1] intValue] - [[wordsWithFrequency objectForKey:w2] intValue];
+        if (n > 0){
+            return (NSComparisonResult)NSOrderedAscending;
+        }
+        if (n < 0){
+            return (NSComparisonResult)NSOrderedDescending;
+        }
+        return (NSComparisonResult)NSOrderedSame;
+    }];
+    
+    return sorted;
 }
 
 - (void)candidateSelectionChanged:(NSAttributedString*)candidateString{
