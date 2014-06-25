@@ -10,7 +10,7 @@ NDMutableTrie*  trie;
 NSDictionary* wordsWithFrequency;
 
 NDMutableTrie* buildTrieFromFile(){
-    NSString* path = [[NSBundle mainBundle] pathForResource:@"google_333333_words"
+    NSString* path = [[NSBundle mainBundle] pathForResource:@"google_227800_words"
                                                      ofType:@"json"];
     
     NSInputStream *inputStream = [[NSInputStream alloc] initWithFileAtPath: path];
