@@ -221,7 +221,7 @@ Here are the three approaches:
     NSMutableString* buffer = [self originalBuffer];
     NSMutableArray* result = [[NSMutableArray alloc] init];
     
-    if(buffer){
+    if(buffer && buffer.length > 0){
         NSArray* filtered = [trie everyObjectForKeyWithPrefix:[NSString stringWithString: buffer]];
         
         if(filtered && filtered.count > 0){
